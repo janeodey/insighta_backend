@@ -141,18 +141,42 @@ router.get("/github/callback", async (req, res) => {
         VALUES ($1, $2, $3, $4)`,
         [refresh.id, user.id, refreshTokenHash, expiresAt]
       );
-  
+
+      res.cookie("access_token",accessToken,{
+        httpOnly:true,
+        secure:true,
+        sameSite:"strict",
+        maxAge:3 * 60 * 1000,
+      })
+
+      res.cookie("refresh_token", refresh.token, {
+        httpOnly:true,
+        secure:true,
+        sameSite:"strict",
+        maxAge:5 * 60 *1000,
+      })
+
       return res.json({
-        status: "success",
-        user: {
-          id: user.id,
-          username: user.username,
-          role: user.role,
-          avatar_url: user.avatar_url,
-        },
-        access_token: accessToken,
-        refresh_token: refresh.token,
-      });
+        status:"success",
+        message:"Login successful",
+        user:{
+          id:user.id,
+          username:user.username,
+          role:user.role
+        }
+      })
+  
+      // return res.json({
+      //   status: "success",
+      //   user: {
+      //     id: user.id,
+      //     username: user.username,
+      //     role: user.role,
+      //     avatar_url: user.avatar_url,
+      //   },
+      //   access_token: accessToken,
+      //   refresh_token: refresh.token,
+      // });
     } catch (error) {
       console.log(error.response?.data || error.message);
   
