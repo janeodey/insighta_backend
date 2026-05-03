@@ -25,7 +25,7 @@ router.get("/github", (req, res) => {
   const githubAuthUrl =
     `https://github.com/login/oauth/authorize` +
     `?client_id=${client_id}` +
-    `&redirect_uri=${redirect_uri}` +
+    `&redirect_uri=${encodeURIComponent(redirect_uri)}` +
     `&scope=read:user user:email`;
 
   res.redirect(githubAuthUrl);
