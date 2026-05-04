@@ -189,6 +189,97 @@ router.get("/github/callback", async (req, res) => {
     }
   });
 
+  // refresh
+  router.post("/refresh", async (req, res) => {
+    try {
+      const refreshToken = req.body?.refresh_token || req.cookies?.refresh_token;
+  
+      if (!refreshToken) {
+        return res.status(400).json({
+          status: "error",
+          message: "Refresh token is required",
+        });
+      }
+  
+      const refreshTokenHash = hashToken(refreshToken);
+  
+      const tokenResult = await pool.query(
+        `
+        SELECT rt.*, u.id AS user_id, u.username, u.role, u.is_active
+        FROM refresh_tokens rt
+        JOIN users u ON rt.user_id = u.id
+        WHERE rt.token_hash = $1
+        `,
+        [refreshTokenHash]
+      );
+  
+      if (tokenResult.rows.length === 0) {
+        return res.status(401).json({
+          status: "error",
+          message: "Invalid refresh token",
+        });
+      }
+  
+      const storedToken = tokenResult.rows[0];
+  
+      if (storedToken.is_revoked) {
+        return res.status(401).json({
+          status: "error",
+          message: "Refresh token has been revoked",
+        });
+      }
+  
+      if (new Date(storedToken.expires_at) < new Date()) {
+        return res.status(401).json({
+          status: "error",
+          message: "Refresh token has expired",
+        });
+      }
+  
+      await pool.query(
+        "UPDATE refresh_tokens SET is_revoked = true WHERE id = $1",
+        [storedToken.id]
+      );
+  
+      const user = {
+        id: storedToken.user_id,
+        username: storedToken.username,
+        role: storedToken.role,
+      };
+  
+      const newAccessToken = generateAccessToken(user);
+      const newRefresh = generateRefreshToken();
+  
+      await pool.query(
+        `
+        INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at)
+        VALUES ($1, $2, $3, $4)
+        `,
+        [
+          newRefresh.id,
+          user.id,
+          hashToken(newRefresh.token),
+          getRefreshTokenExpiry(),
+        ]
+      );
+  
+      return res.json({
+        status: "success",
+        access_token: newAccessToken,
+        refresh_token: newRefresh.token,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "error",
+        message: "Token refresh failed",
+      });
+    }
+  });
+
+
+  // logout
+
 router.post("/logout",(req,res)=>{
     res.json({
         status:"success",
