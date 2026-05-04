@@ -234,31 +234,7 @@ router.get("/search", requireRole("admin", "analyst"), async (req, res) => {
   }
 });
 
-// GET /api/profiles/:id
-router.get("/:id", requireRole("admin", "analyst"), async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM profiles WHERE id = $1", [
-      req.params.id,
-    ]);
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        status: "error",
-        message: "Profile not found",
-      });
-    }
-
-    return res.json({
-      status: "success",
-      data: result.rows[0],
-    });
-  } catch (error) {
-    return res.status(500).json({
-      status: "error",
-      message: "Server error",
-    });
-  }
-});
 
 // POST /api/profiles admin only
 router.post("/", requireRole("admin"), async (req, res) => {
@@ -448,6 +424,33 @@ router.get(
       }
     }
   );
+
+// id
+// GET /api/profiles/:id
+router.get("/:id", requireRole("admin", "analyst"), async (req, res) => {
+    try {
+      const result = await pool.query("SELECT * FROM profiles WHERE id = $1", [
+        req.params.id,
+      ]);
+  
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          status: "error",
+          message: "Profile not found",
+        });
+      }
+  
+      return res.json({
+        status: "success",
+        data: result.rows[0],
+      });
+    } catch (error) {
+      return res.status(500).json({
+        status: "error",
+        message: "Server error",
+      });
+    }
+  });
 
 // DELETE /api/profiles/:id admin only
 router.delete("/:id", requireRole("admin"), async (req, res) => {
