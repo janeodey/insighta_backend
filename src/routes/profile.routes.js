@@ -383,10 +383,16 @@ router.get(
     async (req, res) => {
       try {
         const result = await pool.query(`
-          SELECT 
-            id, name, gender, gender_probability,
-            age, age_group,
-            country_id, country_name, country_probability,
+          SELECT
+            id,
+            name,
+            gender,
+            gender_probability,
+            age,
+            age_group,
+            country_id,
+            country_name,
+            country_probability,
             created_at
           FROM profiles
           ORDER BY created_at DESC
@@ -394,38 +400,43 @@ router.get(
   
         const profiles = result.rows;
   
-        if (profiles.length === 0) {
+        // 🚨 no data
+        if (!profiles || profiles.length === 0) {
           return res.status(404).json({
             status: "error",
-            message: "No profiles found",
+            message: "No profiles found"
           });
         }
   
-        const fields = [
-          "id",
-          "name",
-          "gender",
-          "gender_probability",
-          "age",
-          "age_group",
-          "country_id",
-          "country_name",
-          "country_probability",
-          "created_at",
-        ];
+        // ✅ CSV headers
+        const headers = Object.keys(profiles[0]).join(",");
   
-        const parser = new Parser({ fields });
-        const csv = parser.parse(profiles);
+        // ✅ CSV rows (SAFE formatting)
+        const rows = profiles.map(profile =>
+          Object.values(profile)
+            .map(val => {
+              if (val === null || val === undefined) return "";
+              return `"${String(val).replace(/"/g, '""')}"`; // escape quotes
+            })
+            .join(",")
+        ).join("\n");
   
-        res.header("Content-Type", "text/csv");
-        res.attachment("profiles.csv");
+        const csv = headers + "\n" + rows;
   
-        return res.send(csv);
+        // ✅ Set headers for download
+        res.setHeader("Content-Type", "text/csv");
+        res.setHeader(
+          "Content-Disposition",
+          "attachment; filename=profiles.csv"
+        );
+  
+        res.status(200).send(csv);
+  
       } catch (error) {
-        console.log(error);
-        return res.status(500).json({
+        console.error("CSV EXPORT ERROR:", error); // 🔥 VERY IMPORTANT
+        res.status(500).json({
           status: "error",
-          message: "CSV export failed",
+          message: "Server error"
         });
       }
     }
