@@ -30,7 +30,7 @@ app.get("/", (req, res) => {
   });
 });
 
-app.get("/auth/me", require, (req,res)=>{
+app.get("/auth/me", requireAuth, (req,res)=>{
   res.json({
     status:"success",
     user:req.user
