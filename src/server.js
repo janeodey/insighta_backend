@@ -8,6 +8,7 @@ require("dotenv").config();
 
 const initDb = require("./config/initDb")
 const authRoutes = require("./routes/auth.routes")
+const requireAuth = require("./middleware/auth.middleware")
 
 
 const app = express();
@@ -28,6 +29,13 @@ app.get("/", (req, res) => {
     message: "Insighta Labs+ API is running 🚀",
   });
 });
+
+app.get("/auth/me", require, (req,res)=>{
+  res.json({
+    status:"success",
+    user:req.user
+  })
+})
 
 const PORT = process.env.PORT || 3000;
 
