@@ -400,7 +400,7 @@ router.get(
   
         const profiles = result.rows;
   
-        // 🚨 no data
+        // ✅ handle empty
         if (!profiles || profiles.length === 0) {
           return res.status(404).json({
             status: "error",
@@ -408,33 +408,30 @@ router.get(
           });
         }
   
-        // ✅ CSV headers
+        // ✅ headers
         const headers = Object.keys(profiles[0]).join(",");
   
-        // ✅ CSV rows (SAFE formatting)
+        // ✅ rows (VERY SAFE)
         const rows = profiles.map(profile =>
           Object.values(profile)
             .map(val => {
               if (val === null || val === undefined) return "";
-              return `"${String(val).replace(/"/g, '""')}"`; // escape quotes
+              return `"${String(val).replace(/"/g, '""')}"`;
             })
             .join(",")
         ).join("\n");
   
         const csv = headers + "\n" + rows;
   
-        // ✅ Set headers for download
+        // ✅ send
         res.setHeader("Content-Type", "text/csv");
-        res.setHeader(
-          "Content-Disposition",
-          "attachment; filename=profiles.csv"
-        );
+        res.setHeader("Content-Disposition", "attachment; filename=profiles.csv");
   
-        res.status(200).send(csv);
+        return res.send(csv);
   
       } catch (error) {
-        console.error("CSV EXPORT ERROR:", error); // 🔥 VERY IMPORTANT
-        res.status(500).json({
+        console.error("CSV ERROR:", error); 
+        return res.status(500).json({
           status: "error",
           message: "Server error"
         });
