@@ -5,6 +5,7 @@ const pool = require("../config/db");
 const requireRole = require("../middleware/role.middleware");
 
 const router = express.Router();
+const {parser} = require("json2csv")
 
 function getAgeGroup(age) {
   if (age <= 12) return "child";
@@ -374,6 +375,62 @@ router.post("/", requireRole("admin"), async (req, res) => {
     });
   }
 });
+
+// export route for csv
+router.get(
+    "/export",
+    requireRole("admin", "analyst"),
+    async (req, res) => {
+      try {
+        const result = await pool.query(`
+          SELECT 
+            id, name, gender, gender_probability,
+            age, age_group,
+            country_id, country_name, country_probability,
+            created_at
+          FROM profiles
+          ORDER BY created_at DESC
+        `);
+  
+        const profiles = result.rows;
+  
+        if (profiles.length === 0) {
+          return res.status(404).json({
+            status: "error",
+            message: "No profiles found",
+          });
+        }
+  
+        const fields = [
+          "id",
+          "name",
+          "gender",
+          "gender_probability",
+          "age",
+          "age_group",
+          "country_id",
+          "country_name",
+          "country_probability",
+          "created_at",
+        ];
+  
+        const parser = new Parser({ fields });
+        const csv = parser.parse(profiles);
+  
+        res.header("Content-Type", "text/csv");
+        res.attachment("profiles.csv");
+  
+        return res.send(csv);
+      } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+          status: "error",
+          message: "CSV export failed",
+        });
+      }
+    }
+  );
+  
 
 // DELETE /api/profiles/:id admin only
 router.delete("/:id", requireRole("admin"), async (req, res) => {
