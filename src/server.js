@@ -9,6 +9,7 @@ require("dotenv").config();
 const initDb = require("./config/initDb")
 const authRoutes = require("./routes/auth.routes")
 const requireAuth = require("./middleware/auth.middleware")
+const profileRoutes = require("./routes/profile.routes")
 
 
 const app = express();
@@ -21,7 +22,12 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
+
 app.use("/auth", authRoutes)
+
+// protect all APIs
+app.use("/api", requireAuth)
+app.use("/api/profiles", profileRoutes)
 
 app.get("/", (req, res) => {
   res.json({

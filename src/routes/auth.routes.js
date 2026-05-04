@@ -163,7 +163,9 @@ router.get("/github/callback", async (req, res) => {
           id:user.id,
           username:user.username,
           role:user.role
-        }
+        },
+        access_token:accessToken,
+        refresh_token:refresh.token
       })
   
       // return res.json({
