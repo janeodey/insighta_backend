@@ -431,9 +431,11 @@ router.get(
   
       } catch (error) {
         console.error("CSV ERROR:", error); 
+        console.log("STACK:", error.stack);
+        
         return res.status(500).json({
           status: "error",
-          message: "Server error"
+          message: error.message
         });
       }
     }
