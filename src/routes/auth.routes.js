@@ -145,14 +145,14 @@ router.get("/github/callback", async (req, res) => {
       res.cookie("access_token",accessToken,{
         httpOnly:true,
         secure:true,
-        sameSite:"strict",
+        sameSite:"none",
         maxAge:3 * 60 * 1000,
       })
 
       res.cookie("refresh_token", refresh.token, {
         httpOnly:true,
         secure:true,
-        sameSite:"strict",
+        sameSite:"none",
         maxAge:5 * 60 *1000,
       })
 
