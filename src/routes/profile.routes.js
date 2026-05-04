@@ -400,47 +400,54 @@ router.get(
   
         const profiles = result.rows;
   
-        // ✅ handle empty
-        if (!profiles || profiles.length === 0) {
+        if (profiles.length === 0) {
           return res.status(404).json({
             status: "error",
-            message: "No profiles found"
+            message: "No profiles found",
           });
         }
   
-        // ✅ headers
-        const headers = Object.keys(profiles[0]).join(",");
+        // ✅ CSV HEADER
+        const headers = [
+          "id",
+          "name",
+          "gender",
+          "gender_probability",
+          "age",
+          "age_group",
+          "country_id",
+          "country_name",
+          "country_probability",
+          "created_at"
+        ];
   
-        // ✅ rows (VERY SAFE)
+        // ✅ CSV ROWS
         const rows = profiles.map(profile =>
-          Object.values(profile)
-            .map(val => {
-              if (val === null || val === undefined) return "";
-              return `"${String(val).replace(/"/g, '""')}"`;
-            })
-            .join(",")
-        ).join("\n");
+          headers.map(field => `"${profile[field] ?? ""}"`).join(",")
+        );
   
-        const csv = headers + "\n" + rows;
+        // ✅ FINAL CSV
+        const csv = [headers.join(","), ...rows].join("\n");
   
-        // ✅ send
+        // ✅ RESPONSE HEADERS
         res.setHeader("Content-Type", "text/csv");
-        res.setHeader("Content-Disposition", "attachment; filename=profiles.csv");
+        res.setHeader(
+          "Content-Disposition",
+          "attachment; filename=profiles.csv"
+        );
   
-        return res.send(csv);
+        return res.status(200).send(csv);
   
       } catch (error) {
-        console.error("CSV ERROR:", error); 
-        console.log("STACK:", error.stack);
-        
+        console.error("CSV EXPORT ERROR:", error);
+  
         return res.status(500).json({
           status: "error",
-          message: error.message
+          message: error.message,
         });
       }
     }
   );
-  
 
 // DELETE /api/profiles/:id admin only
 router.delete("/:id", requireRole("admin"), async (req, res) => {
