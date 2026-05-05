@@ -11,12 +11,15 @@ const {
     getRefreshTokenExpiry,
 } = require("../config/utils/tokens")
 const {v7:uuidv7} = require("uuid")
+const { default: rateLimit } = require("express-rate-limit")
 // router.get("/github",(req,res)=>{
 //     res.json({
 //         status:"success",
 //         message:"Github auth route ready"
 //     })
 // })
+
+
 
 router.get("/github", (req, res) => {
   const client_id = process.env.GITHUB_CLIENT_ID;

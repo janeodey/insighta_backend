@@ -5,7 +5,9 @@ const pool = require("../config/db");
 const requireRole = require("../middleware/role.middleware");
 
 const router = express.Router();
-const {parser} = require("json2csv")
+const {parser} = require("json2csv");
+const { default: rateLimit } = require("express-rate-limit");
+
 
 function getAgeGroup(age) {
   if (age <= 12) return "child";

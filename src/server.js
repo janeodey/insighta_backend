@@ -11,6 +11,28 @@ const authRoutes = require("./routes/auth.routes")
 const requireAuth = require("./middleware/auth.middleware")
 const profileRoutes = require("./routes/profile.routes")
 
+const requireApiVersion = require("./middleware/version.middleware")
+const rateLimit = require("express-rate-limit")
+
+const appLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max:60,
+  message:{
+      status:"error",
+      message:"Too many requests, slow down"
+  }
+})
+
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max:10, // 10 requests per minute
+  message:{
+    status:"error",
+    message: "Too many requests, try again later"
+  }
+})
+
+
 
 const app = express();
 
@@ -23,11 +45,29 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
 
+app.use("/auth", authLimiter)
+
+app.use("/api", requireApiVersion)
+app.use("/api", appLimiter)
+app.use("/api", requireAuth)
+
+app.use("/api/profiles", profileRoutes)
+
 app.use("/auth", authRoutes)
 
 // protect all APIs
-app.use("/api", requireAuth)
-app.use("/api/profiles", profileRoutes)
+// app.use("/api", requireAuth)
+// app.use("/api/profiles", profileRoutes)
+
+// last middleware
+app.use((err,req,res,next)=>{
+  console.error(err.stack);
+
+  res.status(err.status || 500).json({
+    status:"error",
+    message:err.message || "internal Server Error"
+  })
+})
 
 app.get("/", (req, res) => {
   res.json({
@@ -44,6 +84,7 @@ app.get("/auth/me", requireAuth, (req,res)=>{
 })
 
 const PORT = process.env.PORT || 3000;
+
 
 // this replaced app.listen()
 initDb()
